@@ -10,8 +10,9 @@ const int colorR = 255;
 const int colorG = 0;
 const int colorB = 0;
 
-int aux = 1;
-int varled1_OnOff = 0;
+int auxNameChange = 0;
+int varName = -1;
+int pressed = 0;
 
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
@@ -84,87 +85,69 @@ void loop() {
         Serial.write(c);
         vars.concat(c);
 
-         // Maniuplacao das variaveis na url
-        //if (vars.endsWith("/led1_on")) varled1_OnOff = 1;
-        //if (vars.endsWith("/led1_off")) varled1_OnOff = 2;
-
-         if (vars.endsWith("/Eduardo_on"))
-        {
-            varled1_OnOff = 1;  
-        }
-        else         
-        if (vars.endsWith("/Gustavo_on"))
-        {
-           varled1_OnOff = 2;  
-        }
-        else
-        if(vars.endsWith("/"))
-           varled1_OnOff = 0;  
-
 
         if (c == '\n' && currentLineIsBlank) {
-          // send a standard http response header
-          client.println("HTTP/1.1 200 OK");
-          client.println("Content-Type: text/html");
-          client.println("Connection: close");  // the connection will be closed after completion of the response
-          //client.println("Refresh: 5");  // refresh the page automatically every 5 sec
-          client.println();
-          client.println("<!DOCTYPE HTML>");
-          client.println("<html>");
+		// send a standard http response header
+		client.println("HTTP/1.1 200 OK");
+		client.println("Content-Type: text/html");
+		client.println("Connection: close");  // the connection will be closed after completion of the response
+		//client.println("Refresh: 5");  // refresh the page automatically every 5 sec
+		client.println();
+		client.println("<!DOCTYPE HTML>");
+		client.println("<html>");
 
 
-          // Condicoes de acionamento da aula 4 ////////////////////////////
+		//Condicoes de acionamento via button
          
-            client.println("<input type=button value=Ligar style=height:60px; width:300px ");
-            client.println(" onclick=\"document.location='/led1_on'\" />");
-            client.println("<input type=button value=Desligar style=height:60px; width:300px ");
-            client.println(" onclick=\"document.location='/led1_off'\" />");
-            client.println("<br>");
-
-            if(aux == 2)
-            {
-                client.println("<input type=\"text\" onkeypress=\"document.location='/Gustavo_on'\">");
-            }else
-				if(aux == 1)
-                {
-                    client.println("<input type=\"text\" onkeypress=\"document.location='/Eduardo_on'\">");
-                }
-
-            
-            client.println("<br>");
-
-            if (varled1_OnOff == 1)             //////////
-            {  
-                // set up the LCD's number of columns and rows:
-                lcd.begin(16, 2);
+            	client.println("<input type=button value=Ligar style=height:60px; width:300px ");
+            	client.println(" onclick=\"document.location='/led1_on'\" />");
+            	client.println("<input type=button value=Desligar style=height:60px; width:300px ");
+           	client.println(" onclick=\"document.location='/led1_off'\" />");
+           	client.println("<br>");
+			
+		//Alterar o endString para alterar a exibição do nome
+            	client.println("<input type=\"text\" onkeypress=\"document.location='/name_change'\">");            
+            	client.println("<br>");
+			
+		delay(10);
+			
+		//Verifica EndString da URL
+		if (vars.endsWith("/name_change"))
+		{
+			pressed = 1;
+			if(auxNameChange == 0)  
+				varName = 0;	//Eduardo
+			else
+				varName = 1;	//Gustavo
+		}
+		else if(vars.endsWith("/"))
+			varName = -1;  
+						
+			
+            	if (varName == 0)             //Eduardo
+            	{  
+                	lcd.begin(16, 2);
+                	lcd.setRGB(55, 200, 24);
     
-                lcd.setRGB(55, 200, 24);
-    
-                // Print a message to the LCD.
-                lcd.print("Eduardo");
-                aux = 2;
-                     
+                	// Print a message to the LCD.
+                	lcd.print("Eduardo");
+                	//auxNameChange = 1;
+                	     
                  
-            }else
-                if (varled1_OnOff == 2)             //////////
-               {  
-                      // set up the LCD's number of columns and rows:
-                      lcd.begin(16, 2);
+            	}else if (varName == 1)         //Gustavo
+              	 	{  
+                    		lcd.begin(16, 2);
+                    		lcd.setRGB(255, 00, 135);
     
-                      lcd.setRGB(255, 00, 135);
-    
-                      // Print a message to the LCD.
-                     lcd.print("Gustavo");
-                     aux = 1;
+                   		 // Print a message to the LCD.
+                    		lcd.print("Gustavo");
+                    		//auxNameChange = 0;
 
-                }else
+                	}else
                 
-                if (varled1_OnOff == 0)             //////////
+                if (varName == -1)             //Mensagem Inicial
                 {  
-                                        // LCD!!
-                    // set up the LCD's number of columns and rows:
                     lcd.begin(16, 2);
-                    
                     lcd.setRGB(255, 255, 255);
                     
                     // Print a message to the LCD.
@@ -173,20 +156,32 @@ void loop() {
                     lcd.print(" caractere:");
                     client.println(" onload=\"document.location='/'\" />");
                 }  
+				
+			if(varName != -1 && pressed == 1)
+			{
+				if(auxNameChange == 1)
+					auxNameChange = 0;
+				else if(auxNameChange == 0)
+					auxNameChange = 1;
+				
+				pressed = 0;
+			}
                 
-          // output the value of each analog input pin
-          for (int analogChannel = 0; analogChannel < 6; analogChannel++) {
-            int sensorReading = analogRead(analogChannel);
-            client.print("analog input ");
-            client.print(analogChannel);
-            client.print(" is ");
-            client.print(sensorReading);
-            client.println("<br />");
-          }
+			// output the value of each analog input pin
+			for (int analogChannel = 0; analogChannel < 6; analogChannel++) 
+			{
+				int sensorReading = analogRead(analogChannel);
+				client.print("analog input ");
+				client.print(analogChannel);
+				client.print(" is ");
+				client.print(sensorReading);
+				client.println("<br />");
+			}
     
-          client.println("</html>");
-          break;
+			client.println("</html>");
+			break;
         }
+		
         if (c == '\n') {
           // you're starting a new line
           currentLineIsBlank = true;
